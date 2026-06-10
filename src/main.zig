@@ -2,6 +2,7 @@ const std = @import("std");
 const sdl = @import("sdl");
 const glad = @import("glad");
 const khr = @import("khr");
+const shader = @import("shader");
 
 var gQuit: bool = false;
 
@@ -14,7 +15,7 @@ pub fn main(init: std.process.Init) !void
 
     var gVAO: glad.GLuint = 0;
     var gVBO: glad.GLuint = 0;
-    var gPipeline: glad.GLuint = 0;
+//    var gPipeline: glad.GLuint = 0;
 
     // Initialize the program
     if (sdl.SDL_Init(sdl.SDL_INIT_VIDEO) < 0)
@@ -79,38 +80,8 @@ pub fn main(init: std.process.Init) !void
     const io = init.io;
     const gpa = init.gpa;
 
-    const vertex = try ReadFileAsString(io, gpa, "./shaders/vert.glsl");
-    defer gpa.free(vertex);
-
-    const fragment = try ReadFileAsString(io, gpa, "./shaders/frag.glsl");
-    defer gpa.free(fragment);
-
-    var vertexObject: glad.GLuint = 0;
-    vertexObject = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-
-    var fragmentObject: glad.GLuint = 0;
-    fragmentObject = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-
-    const vertexC = try gpa.dupeZ(u8, vertex);
-    defer gpa.free(vertexC);
-
-    const fragmentC = try gpa.dupeZ(u8, fragment);
-    defer gpa.free(fragmentC);
-
-    const vertexArr = [_][*:0]const u8{ vertexC };
-    const fragmentArr = [_][*:0]const u8{ fragmentC };
-
-    _ = glad.glShaderSource(vertexObject, 1, &vertexArr[0], null);
-    _ = glad.glCompileShader(vertexObject);
-
-    _ = glad.glShaderSource(fragmentObject, 1, &fragmentArr[0], null);
-    _ = glad.glCompileShader(fragmentObject);
-
-    gPipeline = glad.glCreateProgram();
-
-    _ = glad.glAttachShader(gPipeline, vertexObject);
-    _ = glad.glAttachShader(gPipeline, fragmentObject);
-    _ = glad.glLinkProgram(gPipeline);
+    var defaultShader: glad.GLuint = 0;
+    try shader.init(&defaultShader, "./shaders/vert.glsl", "./shaders/frag.glsl", io, gpa);
 
     while (!gQuit)
     {
@@ -125,7 +96,7 @@ pub fn main(init: std.process.Init) !void
 
         glad.glClear(glad.GL_DEPTH_BUFFER_BIT | glad.GL_COLOR_BUFFER_BIT);
 
-        glad.glUseProgram(gPipeline);
+        glad.glUseProgram(defaultShader);
 
         glad.glBindVertexArray(gVAO);
         glad.glBindBuffer(glad.GL_ARRAY_BUFFER, gVAO);
@@ -141,11 +112,6 @@ pub fn main(init: std.process.Init) !void
     sdl.SDL_Quit();
 
 
-}
-
-fn ReadFileAsString(io: std.Io, gpa: std.mem.Allocator, path: []const u8) ![]u8
-{
-    return try std.Io.Dir.cwd().readFileAlloc(io, path, gpa, .unlimited);
 }
 
 fn GetOpenGLVersionInfo() void

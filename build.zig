@@ -4,6 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // C Libraries
     const glad_c = b.addTranslateC(.{
         .root_source_file = b.path("thirdparty/glad/glad.c"),
         .target = target,
@@ -25,6 +26,11 @@ pub fn build(b: *std.Build) void {
     });
     sdl_c.linkSystemLibrary("SDL2", .{});
 
+    // Zig libraries / abstractions
+    const shader = b.addModule("shader", .{
+        .root_source_file = b.path("src/shader.zig"),
+    });
+
     const exe = b.addExecutable(.{
         .name = "prog",
         .root_module = b.createModule(.{
@@ -33,9 +39,15 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    exe.root_module.addImport("glad", glad_c.createModule());
+
+    const glad = glad_c.createModule();
+
+    exe.root_module.addImport("glad", glad);
     exe.root_module.addImport("khr", khr_c.createModule());
     exe.root_module.addImport("sdl", sdl_c.createModule());
+
+    exe.root_module.addImport("shader", shader);
+    shader.addImport("glad", glad);
 
     b.installArtifact(exe);
 }

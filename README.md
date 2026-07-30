@@ -1,2 +1,3 @@
-# solar-system-zig-rewrite
-Rewriting my Solar System OpenGL project in Zig!
+This repository has been migrated to [Codeberg](https://codeberg.org/neuroDEVergent/solar-system-zig-rewrite)
+
+It is NOT mirrored.
